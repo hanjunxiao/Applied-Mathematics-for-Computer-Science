@@ -1,0 +1,60 @@
+#################################################
+# PCA: Principle Component Analysis
+# Author : Junxiao Han
+# Date   : 2016-5-26
+# Email  : junxiaohan@foxmail.com
+#################################################
+
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+
+# Convert the data of written digits to matrix
+def convert_data():
+	data_file = open("optdigits.tra", "r")
+	three_matrix = []
+	for line in data_file.readlines():
+		if int(line.strip("\n").split(",")[-1]) == 3:
+			three_matrix.append([int(i) for i in line.strip("\n").split(",")[0:-1]])
+	three_matrix = np.array(three_matrix)
+	return three_matrix
+
+# The PCA algorithm
+def pca(three_matrix, K = 2):
+	for j in range(three_matrix.shape[1]):
+		# mean-normalization
+		mu = sum(three_matrix[:,j])/float(len(three_matrix))
+		mu_normalized_value = [value-mu for value in three_matrix[:,j].tolist()]
+		three_matrix[:,j] = np.array(mu_normalized_value)
+
+		# variance-normalization
+		# sigma = math.sqrt(sum([value**2 for value in mu_normalized_value])/float(len(three_matrix)))
+		# three_matrix[:,j] = np.array([value/float(sigma) for value in mu_normalized_value])
+
+	# Calculate the covariance matrix 
+	cov_matrix = np.cov(np.transpose(three_matrix))
+	# Calculate the eigenvalue and eigenvector of covariance matrix 
+	eig_vals, eig_vecs = np.linalg.eig(cov_matrix)
+	# Sort the eigenvalues and eigenvectors
+	eig_vals_sorted = np.sort(eig_vals)
+	eig_vecs_sorted = eig_vecs[eig_vals.argsort()]
+	
+	# Project the original high-dimension matrix to the pricinple dimensions
+	reduced_matrix = np.dot(three_matrix, np.transpose(np.array(eig_vecs_sorted[0:K])))
+	return reduced_matrix
+
+# Show the results
+def show_result(reduced_matrix):
+	x,y = [],[]
+	for i in range(reduced_matrix.shape[0]):
+		x.append(reduced_matrix[i,0])
+		y.append(reduced_matrix[i,1])
+
+	plt.figure()
+	plt.scatter(x,y,s=30,color='blue', facecolors='none',linewidth=2)
+	plt.show()
+
+if __name__ == "__main__":
+	three_matrix = convert_data()
+	reduced_matrix = pca(three_matrix, 2)
+	show_result(reduced_matrix)
