@@ -1,0 +1,65 @@
+#################################################
+# levenberg-marquardt
+# Author : Junxiao Han
+# Date   : 2016-5-26
+# Email  : junxiaohan@foxmail.com
+#################################################
+
+import numpy as np
+from numpy.linalg import inv
+
+def lm(data,obs,n_iters,lamda):
+	num_data = len(data)
+	num_param = 2
+	# initial value
+	a_init = 10
+	b_init = 0.5
+	update_flag = 1
+	a_opt = a_init
+	b_opt = b_init
+	J = np.zeros((num_data,num_param))
+	y0 = a_init*np.exp(-b_init*data)
+	d0 = obs - y0
+	e = np.dot(d0,d0)
+	# Begin iteration
+	for it in range(n_iters):
+		if update_flag==1:
+			for i in range(num_data):
+				# Calculate Jacobi Matrix
+				J[i,:] = -a_opt*b_opt*np.exp(-b_opt*data[i])
+			# Calculate Hessian Matrix		
+			H = np.dot(J.T,J)
+			y_est = a_opt*np.exp(-b_opt*data)
+			# Error
+			d = obs - y_est
+		# Calculate Hessian Matrix according to lambda	
+		H_lm = H+lamda*np.eye(num_param)
+		dp = np.dot(inv(H_lm),np.dot(J.T,d))
+		a_lm = a_opt + dp[0]
+		b_lm = b_opt + dp[1]
+
+		y_est_lm = a_lm*np.exp(-b_lm*data)
+		d_lm = obs-y_est_lm
+		e_lm = np.dot(d_lm,d_lm)
+
+		if e_lm<e:
+			lamda = lamda/5
+			a_opt = a_lm
+			b_opt = b_lm
+			e = e_lm
+			update_flag = 1
+			# print e
+		else:
+			update_flag = 0
+			lamda = lamda*5
+		
+	return (a_opt,b_opt)
+
+if __name__ == "__main__":
+	data = np.array([0.25,0.5,1,1.5,2,3,4,6,8])
+	obs  = np.array([19.21,18.15,15.36,14.10, 12.89,9.32,7.45,5.24,3.01])
+
+	n_iters = 50
+	lamda = 0.05
+	a_opt,b_opt = lm(data,obs,n_iters,lamda)
+	print a_opt,b_opt
