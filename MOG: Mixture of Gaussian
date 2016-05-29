@@ -1,0 +1,65 @@
+#################################################
+# MOG: Mixture of Gaussian
+# Author : Junxiao Han
+# Date   : 2016-5-26
+# Email  : junxiaohan@foxmail.com
+#################################################
+
+import math
+import copy
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate a 2-D Gaussian distribution
+def two_D_Gaussian(sigma,mu1,mu2,N):
+    y = []
+    for i in xrange(0,N):
+        if np.random.random(1) >= 0.5:
+            y.append(np.random.normal()*sigma + mu1)
+        else:
+            y.append(np.random.normal()*sigma + mu2)
+    return y
+
+# E step of EM-algorithm
+def e_step(y,sigma,k,N):
+    gama = np.zeros((N,k))
+    for i in xrange(0,N):
+        sum_phi = 0
+        for j in xrange(0,k):
+            sum_phi += math.exp((-1/(2*(float(sigma**2))))*(float(y[i]-mu[j]))**2)
+        for j in xrange(0,k):
+            gama[i,j] = math.exp((-1/(2*(float(sigma**2))))*(float(y[i]-mu[j]))**2) / sum_phi
+    return gama
+
+# M step of EM-algorithm
+def m_step(y,k,N,gama,mu):
+    for j in xrange(0,k):
+        sum_gama = 0
+        sum_gama_y = 0
+        for i in xrange(0,N):
+            sum_gama_y += gama[i,j]*y[i]
+            sum_gama += gama[i,j]
+        mu[j] = sum_gama_y / sum_gama 
+    return mu
+
+if __name__ == '__main__':
+    sigma = 6
+    mu1 = 40
+    mu2 = 20
+    k = 2
+    N = 1000
+    iter_num = 1000
+    epsilon = 0.0001
+    y = two_D_Gaussian(sigma,mu1,mu2,N)
+    mu = np.random.random(2)
+    # Begin iteration
+    for i in range(iter_num):
+        pre_mu = copy.deepcopy(mu)
+        gama = e_step(y,sigma,k,N)
+        mu = m_step(y,k,N,gama,mu)
+        print i,mu
+        # if the variance is smaller than epsilon, then the iteration ends
+        if sum(abs(mu-pre_mu)) < epsilon:
+            break
+    plt.hist(y,50)
+    plt.show()
